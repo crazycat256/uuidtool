@@ -10,7 +10,7 @@ from uuidtool.commands.new import new
 EPILOG = """some documentation about UUIDs:
 - RCF 9562: https://datatracker.ietf.org/doc/html/rfc9562
 - RFC 4122: https://datatracker.ietf.org/doc/html/rfc4122 (obsolete)
-- UUIDv2 documentation: ttps://pubs.opengroup.org/onlinepubs/9696989899/chap5.htm#tagcjh_08_02_01_01
+- UUIDv2 documentation: https://pubs.opengroup.org/onlinepubs/9696989899/chap5.htm#tagcjh_08_02_01_01
 """
 
 def main():
