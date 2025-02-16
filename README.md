@@ -9,14 +9,14 @@ This tool is intended to be used in CTF challenges, penetration testing, and oth
 ## Installation
 
 ```bash
-pip install git+https://github.com/crazycat256/uuidtool.git
+pip install uuidtool
 ```
 
 If you use an [externally managed environment](https://packaging.python.org/en/latest/specifications/externally-managed-environments/):
 
 ```bash
 sudo apt install pipx
-pipx install git+https://github.com/crazycat256/uuidtool.git
+pipx install uuidtool
 ```
 
 Or
