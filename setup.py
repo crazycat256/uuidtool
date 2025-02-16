@@ -1,8 +1,11 @@
 from setuptools import setup, find_packages
 
+with open("README.md", "r") as f:
+    long_description = f.read()
+
 setup(
     name="uuidtool",
-    version="1.0",
+    version="1.1",
     description="CLI tool to manipulate UUIDs",
     author="crazycat256",
     url="https://github.com/crazycat256/uuidtool",
@@ -22,4 +25,6 @@ setup(
         "Intended Audience :: Developers",
         "Topic :: Software Development :: Libraries :: Python Modules",
     ],
+    long_description=long_description,
+    long_description_content_type="text/markdown",
 )
