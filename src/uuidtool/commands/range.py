@@ -1,18 +1,19 @@
-from uuidtool.utils import *
-from argparse import Namespace
 from uuidtool.commands.edit import set_time
+from uuidtool.utils import *
 
 
-def range(args: Namespace):
-    """Generate a range of UUIDs whose timestamp is close to the timestamp of a given UUID
+def range(str_uuid: str, count: int, sort: str="alt"):
+    """Generate a range of UUIDs around the timestamp of a given UUID
 
     Args:
         args (Namespace): The arguments passed to the command
+        :param str_uuid: The UUID to generate a range from. Will be in the middle of the range
+        :param count: The number of UUIDs to generate
+        :param sort: Way to sort the resulting UUIDs
     """
     
-    uuid = get_uuid(args.uuid)
-    
-    count = args.count
+    uuid = get_uuid(str_uuid)
+
     version = get_version(uuid)
     
     if version not in (1, 2, 6, 7):
@@ -41,13 +42,11 @@ def range(args: Namespace):
     high = min(highest, t + clock_tick * (count // 2 + count % 2))
     timestamps = range(low, high, clock_tick)
     
-    if args.sort == "asc":
+    if sort == "asc":
         it = timestamps
-    if args.sort == "dsc":
+    if sort == "dsc":
         it = sorted(timestamps, reverse=True)
-    elif args.sort == "alt":
+    elif sort == "alt":
         it = alt_sort(timestamps)
-            
-    for timestamp in it:
-        uuid = set_time(uuid, timestamp)
-        print(uuid)
+
+    return [set_time(uuid, timestamp) for timestamp in it]

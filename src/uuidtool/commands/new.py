@@ -1,54 +1,69 @@
-import time, random, os
-from uuidtool.utils import *
-from argparse import Namespace
+import os
+import random
+import time
 from uuid import *
 
+from uuidtool.utils import *
 
-def new(args: Namespace):
+
+def new(version: int=None, uuid_time: str=None, clock_sequence: str=None, node: str=None,
+        local_id: str=None, local_domain: str=None, namespace: str=None, name: str=None,
+        custom_a: str=None,  custom_b: str=None,  custom_c: str=None):
     """Generate a new UUID
 
     Args:
-        args (Namespace): The arguments passed to the command
+        :param version: The version of the new UUID
+        :param uuid_time: Timestamp to set
+        :param clock_sequence: The clock sequence to use
+        :param node: The node (mac address) to use
+        :param local_id: The local id to use
+        :param local_domain: The local domain to use
+        :param namespace: The namespace to use
+        :param name: The name to use
+        :param custom_a: A custom field
+        :param custom_b: A custom field
+        :param custom_c: A custom field
     """
     
-    version: int = args.version
-    
-    check_args(args, version)
+    check_args(version, uuid_time, clock_sequence, node, local_id,
+               local_domain, namespace, name,custom_a,  custom_b,  custom_c)
     
     timestamp_ns = None
-    uuid_time: str = args.time
     if uuid_time is not None:
         timestamp_ns = parse_time(uuid_time)
     
-    clock_sequence = get_int(args.clock_sequence, "Clock sequence must be an integer")
-    node = get_int(args.node, "Node must be a hex string or a MAC address", 16)
-    local_id = get_int(args.local_id, "Local ID must be an integer")
-    local_domain = get_int(args.local_domain, "Local domain must be an integer")
-    namespace: str = args.namespace
-    name: str = args.name
-    custom_a = get_int(args.custom_a, "Custom field A must be a hex string", 16)
-    custom_b = get_int(args.custom_b, "Custom field B must be a hex string", 16)
-    custom_c = get_int(args.custom_c, "Custom field C must be a hex string", 16)
-    
+    clock_sequence = get_int(clock_sequence, "Clock sequence must be an integer")
+    node = get_int(node, "Node must be a hex string or a MAC address", 16)
+    local_id = get_int(local_id, "Local ID must be an integer")
+    local_domain = get_int(local_domain, "Local domain must be an integer")
+    namespace: str = namespace
+    name: str = name
+    custom_a = get_int(custom_a, "Custom field A must be a hex string", 16)
+    custom_b = get_int(custom_b, "Custom field B must be a hex string", 16)
+    custom_c = get_int(custom_c, "Custom field C must be a hex string", 16)
+
+    uuid = None
     match version:
         case 1:
-            print(uuid_v1(timestamp_ns, clock_sequence, node))
+            uuid = uuid_v1(timestamp_ns, clock_sequence, node)
         case 2:
-            print(uuid_v2(local_id, timestamp_ns, local_domain, clock_sequence, node))
+            uuid = uuid_v2(local_id, timestamp_ns, local_domain, clock_sequence, node)
         case 3:
-            print(uuid_v3(namespace, name))
+            uuid = uuid_v3(namespace, name)
         case 4:
-            print(uuid4())
+            uuid = uuid4()
         case 5:
-            print(uuid_v5(namespace, name))
+            uuid = uuid_v5(namespace, name)
         case 6:
-            print(uuid_v6(timestamp_ns, clock_sequence, node))
+            uuid = uuid_v6(timestamp_ns, clock_sequence, node)
         case 7:
-            print(uuid_v7(timestamp_ns, clock_sequence))
+            uuid = uuid_v7(timestamp_ns, clock_sequence)
         case 8:
-            print(uuid_v8(custom_a, custom_b, custom_c))
+            uuid = uuid_v8(custom_a, custom_b, custom_c)
         case _:
             error("UUID version must be between 1 and 8")
+
+    return uuid
     
     
 def uuid_v1(timestamp_ns: int = None, clock_seq: int = None, node: int = None) -> UUID:

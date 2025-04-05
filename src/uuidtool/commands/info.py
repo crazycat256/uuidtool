@@ -1,21 +1,19 @@
 import time
-from uuidtool.utils import *
-from argparse import Namespace
-from uuid import UUID
 
+from uuidtool.utils import *
 
 OUTPUT_BASE = """UUID: {formatted_uuid}
 {RED}Version: {version}{RESET}
 {YELLOW}Variant: {variant}{RESET}"""
 
 
-def info(args: Namespace):
+def info(str_uuid: str):
     """Get information about a UUID
     
     Args:
-        args (Namespace): The arguments passed to the command
+        :param str_uuid: The UUID to get information about
     """
-    uuid = get_uuid(args.uuid)
+    uuid = get_uuid(str_uuid)
         
     version = get_version(uuid)
     variant = get_variant(uuid)
@@ -24,15 +22,15 @@ def info(args: Namespace):
         print(f"{YELLOW}{BOLD}Warning: This UUID is not compliant with RFC 9562, some information may be incorrect{RESET}")
 
     match version:
-        case 1: v1(uuid)
-        case 2: v2(uuid)
-        case 3: v3(uuid)
-        case 4: v4(uuid)
-        case 5: v5(uuid)
-        case 6: v6(uuid)
-        case 7: v7(uuid)
-        case 8: v8(uuid)
-        case _: other(uuid)
+        case 1: return v1(uuid)
+        case 2: return v2(uuid)
+        case 3: return v3(uuid)
+        case 4: return v4(uuid)
+        case 5: return v5(uuid)
+        case 6: return v6(uuid)
+        case 7: return v7(uuid)
+        case 8: return v8(uuid)
+        case _: return other(uuid)
 
 
 V1_V6_OUTPUT = OUTPUT_BASE + """
@@ -53,15 +51,15 @@ def v1(uuid: UUID):
     
     uuid_time = get_timestamp(uuid)
     formatted_time = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.gmtime(uuid_time // 1e9))
-    
-    print(V1_V6_OUTPUT.format(
+
+    return V1_V6_OUTPUT.format(
         **ALL_COLORS,
         **get_common_info(uuid),
         formatted_uuid=formatted_uuid,
         time=formatted_time,
         time_ns=uuid_time,
         clock=uuid.clock_seq
-    ))
+    )
     
 V2_OUTPUT = OUTPUT_BASE + """
 {GREEN}Timestamp: {time} ({time_ns}){RESET}
@@ -98,7 +96,7 @@ def v2(uuid: UUID):
     )
     formatted_time = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.gmtime(timestamp_ns // 1e9))
     
-    print(V2_OUTPUT.format(
+    return V2_OUTPUT.format(
         **ALL_COLORS,
         **get_common_info(uuid),
         formatted_uuid=formatted_uuid,
@@ -107,7 +105,7 @@ def v2(uuid: UUID):
         local_id=local_id,
         local_domain=local_domain,
         clock=clock_sequence
-    ))
+    )
     
 V3_V5_OUTPUT = OUTPUT_BASE + """
 {GREEN}Hash ({hash_type}): {hash}{RESET}
@@ -130,13 +128,13 @@ def v3(uuid: UUID):
     
     uuid_hash = uuid.hex[:12] + x + uuid.hex[13:16] + x + uuid.hex[17:]
         
-    print(V3_V5_OUTPUT.format(
+    return V3_V5_OUTPUT.format(
         **ALL_COLORS,
         **get_common_info(uuid),
         formatted_uuid=formatted_uuid,
         hash_type="MD5",
         hash=uuid_hash
-    ))
+    )
 
 V4_OUTPUT = OUTPUT_BASE + """
 Random bits: 122{RESET}"""
@@ -172,13 +170,13 @@ def v5(uuid: UUID):
     x = f"{RESET}{BRIGHT_WHITE}x{GREEN}"
     uuid_hash = uuid.hex[:12] + x + uuid.hex[13:16] + x + uuid.hex[17:] + RESET + 32 * "x"
         
-    print(V3_V5_OUTPUT.format(
+    return V3_V5_OUTPUT.format(
         **ALL_COLORS,
         **get_common_info(uuid),
         formatted_uuid=formatted_uuid,
         hash_type="SHA1",
         hash=uuid_hash,
-    ))
+    )
 
 
 def v6(uuid: UUID):
@@ -197,14 +195,14 @@ def v6(uuid: UUID):
     timestamp_ns = time_val * 100 - GREGORIAN_UNIX_OFFSET
     formatted_time = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.gmtime(timestamp_ns // 1e9))
     
-    print(V1_V6_OUTPUT.format(
+    return V1_V6_OUTPUT.format(
         **ALL_COLORS,
         **get_common_info(uuid),
         formatted_uuid=formatted_uuid,
         time=formatted_time,
         time_ns=timestamp_ns,
         clock=uuid.clock_seq
-    ))
+    )
 
 V7_OUTPUT = OUTPUT_BASE + """
 {GREEN}Timestamp: {time} ({time_ns}){RESET}
@@ -228,13 +226,13 @@ def v7(uuid: UUID):
         f"{s[24:]}"
     )
     
-    print(V7_OUTPUT.format(
+    return V7_OUTPUT.format(
         **ALL_COLORS,
         **get_common_info(uuid),
         formatted_uuid=formatted_uuid,
         time=formatted_time,
         time_ns=timestamp_ns
-    ))
+    )
     
     
 V8_OUTPUT = OUTPUT_BASE + """
@@ -274,7 +272,7 @@ def v8(uuid: UUID):
         f"{CYAN}{s[24:]}{RESET}"
     )
     
-    print(V8_OUTPUT.format(
+    return V8_OUTPUT.format(
         **ALL_COLORS,
         **get_common_info(uuid),
         formatted_uuid=formatted_uuid,
@@ -282,7 +280,7 @@ def v8(uuid: UUID):
         custom_b=custom_b,
         custom_c=custom_c,
         possible_timestamp=formatted_possible_timestamp
-    ))
+    )
     
 
 OTHER_OUTPUT = """
@@ -303,11 +301,11 @@ def other(uuid: UUID):
         f"{s[24:]}"
     )
     
-    print(OTHER_OUTPUT.format(
+    return OTHER_OUTPUT.format(
         **ALL_COLORS,
         **get_common_info(uuid),
         formatted_uuid=formatted_uuid
-    ))
+    )
 
 
 
