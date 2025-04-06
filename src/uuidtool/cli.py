@@ -1,11 +1,11 @@
 import argparse
-from uuidtool.utils import *
-from uuidtool.commands.info import info
-from uuidtool.commands.edit import edit
-from uuidtool.commands.sandwich import sandwich
-from uuidtool.commands.range import range
-from uuidtool.commands.new import new
 
+from uuidtool.commands.edit import edit
+from uuidtool.commands.info import info
+from uuidtool.commands.new import new
+from uuidtool.commands.range import range
+from uuidtool.commands.sandwich import sandwich
+from uuidtool.utils import *
 
 EPILOG = """some documentation about UUIDs:
 - RCF 9562: https://datatracker.ietf.org/doc/html/rfc9562
@@ -69,15 +69,24 @@ def main():
         
     match command:
         case "info":
-            info(args)
+            i = info(args.uuid)
+            print(i)
         case "edit":
-            edit(args)
+            uuid = edit(args.uuid, args.time, args.clock_sequence, args.node, args.local_id, args.local_domain,
+                        args.custom_a, args.custom_b, args.custom_c)
+            print(uuid)
         case "sandwich":
-            sandwich(args)
+            uuids = sandwich(args.uuid1, args.uuid2)
+            for uuid in uuids:
+                print(uuid)
         case "range":
-            range(args)
+            uuids = range(args.uuid, args.count, args.sort)
+            for uuid in uuids:
+                print(uuid)
         case "new":
-            new(args)
+            uuid = new(args.version, args.time, args.clock_sequence, args.node, args.local_id, args.local_domain,
+                args.namespace, args.name, args.custom_a, args.custom_b, args.custom_c)
+            print(uuid)
         case None:
             parser.print_help()
         case _:

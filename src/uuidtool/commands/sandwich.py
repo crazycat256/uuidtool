@@ -1,14 +1,17 @@
-import argparse
-from uuidtool.utils import *
 from uuidtool.commands.edit import set_time
+from uuidtool.utils import *
 
 
+def sandwich(str_uuid1: str, str_uuid2: str, sort: str='alt'):
+    """Perform a sandwich attack
 
-
-def sandwich(args: argparse.Namespace):
-    
-    uuid1 = get_uuid(args.uuid1)
-    uuid2 = get_uuid(args.uuid2)
+        Args:
+            :param str_uuid1: The first UUID, acting as lower limit
+            :param str_uuid2: The second UUID, acting as higher limit
+            :param sort: Way to sort the resulting UUIDs
+    """
+    uuid1 = get_uuid(str_uuid1)
+    uuid2 = get_uuid(str_uuid2)
     
     version = get_version(uuid1)
     version2 = get_version(uuid2)
@@ -47,15 +50,14 @@ def sandwich(args: argparse.Namespace):
     high = min(highest, t2)
     timestamps = range(low, high, clock_tick)
     
-    if args.sort == "asc":
+    if sort == "asc":
         it = timestamps
-    if args.sort == "dsc":
+    if sort == "dsc":
         it = sorted(timestamps, reverse=True)
-    elif args.sort == "alt":
+    elif sort == "alt":
         it = alt_sort(timestamps)
-        
-    for timestamp in it:
-        print(set_time(uuid1, timestamp))
+
+    return [set_time(uuid1, timestamp) for timestamp in it]
 
 
     

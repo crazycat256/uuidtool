@@ -1,7 +1,6 @@
-from uuid import UUID
-from datetime import datetime
-from argparse import Namespace
 import sys
+from datetime import datetime
+from uuid import UUID
 
 # https://uuid6.github.io/uuid6-ietf-draft/
 GREGORIAN_UNIX_OFFSET = 12219292800000000000
@@ -15,26 +14,28 @@ def error(*args, **kwargs):
     print(*args, **kwargs, file=sys.stderr)
     exit(1)
     
-def check_args(args: Namespace, version: int):
-    if args.time is not None and version not in (1, 2, 6, 7):
+def check_args(version: int, uuid_time: str=None, clock_sequence: str=None, node: str=None,
+               local_id: str=None,local_domain: str=None, namespace: str=None, name: str=None,
+               custom_a: str=None,  custom_b: str=None,  custom_c: str=None):
+    if uuid_time is not None and version not in (1, 2, 6, 7):
         error("Timestamp is only available for UUID versions 1, 2, 6, and 7, not ", version)
-    if args.clock_sequence is not None and version not in (1, 2, 6):
+    if clock_sequence is not None and version not in (1, 2, 6):
         error("Clock sequence is only available for UUID versions 1, 2 and 6, not ", version)
-    if args.node is not None and version not in (1, 2, 6):
+    if node is not None and version not in (1, 2, 6):
         error("Node is only available for UUID versions 1, 2 and 6, not ", version)
-    if args.local_id is not None and version != 2:
+    if local_id is not None and version != 2:
         error("Local ID is only available for UUID version 2, not ", version)
-    if args.local_domain is not None and version != 2:
+    if local_domain is not None and version != 2:
         error("Local domain is only available for UUID version 2, not ", version)
-    if args.namespace is not None and version not in (3, 5):
+    if namespace is not None and version not in (3, 5):
         error("Namespace is only available for UUID versions 3 and 5, not ", version)
-    if args.name is not None and version not in (3, 5):
+    if name is not None and version not in (3, 5):
         error("Name is only available for UUID versions 3 and 5, not ", version)
-    if args.custom_a is not None and version != 8:
+    if custom_a is not None and version != 8:
         error("Custom field A is only available for UUID version 8, not ", version)
-    if args.custom_b is not None and version != 8:
+    if custom_b is not None and version != 8:
         error("Custom field B is only available for UUID version 8, not ", version)
-    if args.custom_c is not None and version != 8:
+    if custom_c is not None and version != 8:
         error("Custom field C is only available for UUID version 8, not ", version)
 
 def is_uuid(uuid_str: str) -> bool:

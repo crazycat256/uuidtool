@@ -1,28 +1,27 @@
-from uuidtool.utils import *
-from argparse import Namespace
 from uuid import UUID
 
+from uuidtool.utils import *
 
-def edit(args: Namespace):
+
+def edit(str_uuid: str, uuid_time: str=None, clock_sequence: str=None, node: str=None, local_id: str=None,
+         local_domain: str=None, custom_a: str=None,  custom_b: str=None,  custom_c: str=None):
     """Edit a UUID
 
     Args:
-        args (Namespace): The arguments passed to the command
+        :param str_uuid: The UUID to edit
+        :param uuid_time: Timestamp to set
+        :param clock_sequence: The clock sequence to use
+        :param node: The node (mac address) to use
+        :param local_id: The local id to use
+        :param local_domain: The local domain to use
+        :param custom_a: A custom field
+        :param custom_b: A custom field
+        :param custom_c: A custom field
     """
     
-    uuid = get_uuid(args.uuid)
-    
+    uuid = get_uuid(str_uuid)
     version = get_version(uuid)
-    check_args(args, version)
-        
-    uuid_time: str = args.time
-    clock_sequence: str = args.clock_sequence
-    node: str = args.node
-    local_id: str = args.local_id
-    local_domain: str = args.local_domain
-    custom_a: str = args.custom_a
-    custom_b: str = args.custom_b
-    custom_c: str = args.custom_c
+    check_args(version, uuid_time, clock_sequence, node, local_id, local_domain, None, None, custom_a, custom_b, custom_c)
     
     
     if uuid_time is not None:
@@ -78,7 +77,7 @@ def edit(args: Namespace):
             error("Custom field C must be a 16 byte hex string")
         uuid = set_custom_c(uuid, custom_c)
             
-    print(uuid)
+    return uuid
     
     
 
@@ -87,7 +86,7 @@ def set_time(uuid: UUID, new_time_ns: int) -> UUID:
 
     Args:
         uuid (UUID): The UUID to set the time for
-        time_str (str): The time to set in nanoseconds, seconds or iso format
+        new_time_ns (str): The time to set in nanoseconds, seconds or iso format
 
     Returns:
         UUID: The UUID with the new time set
