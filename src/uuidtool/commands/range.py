@@ -1,26 +1,27 @@
+from typing import Literal
 from uuidtool.commands.edit import set_time
 from uuidtool.utils import *
 
 
-def range(str_uuid: str, count: int, sort: str="alt"):
+
+def uuid_range(uuid: str | UUID, count: int, sort: Literal["asc", "desc", "alt"] = "alt"):
     """Generate a range of UUIDs around the timestamp of a given UUID
 
-    Args:
-        args (Namespace): The arguments passed to the command
-        :param str_uuid: The UUID to generate a range from. Will be in the middle of the range
-        :param count: The number of UUIDs to generate
-        :param sort: Way to sort the resulting UUIDs
+    :param uuid: The UUID to generate a range from. Will be in the middle of the range
+    :param count: The number of UUIDs to generate
+    :param sort: Way to sort the resulting UUIDs
     """
     
-    uuid = get_uuid(str_uuid)
-
-    version = get_version(uuid)
+    uuid = get_uuid(uuid)
+    if isinstance(count, float): count = int(count)
     
-    if version not in (1, 2, 6, 7):
-        error(f"This version of UUID ({version}) has no timestamp, so it can't be used with this command")
+    if not isinstance(count, int):
+        raise UUIDToolError(f"Invalid count: Expected an integer, got {count}")
+    
+    version = get_version(uuid)
         
     if count <= 1:
-        error("Count must be greater than 1")
+        raise UUIDToolError(f"Count must be greater than 1, got {count}")
     
     match version:
         case 1 | 6:
@@ -35,6 +36,8 @@ def range(str_uuid: str, count: int, sort: str="alt"):
             clock_tick = 1_000_000
             highest = (2**48 - 1) * 1_000_000
             lowest = 0
+        case _:
+            raise UUIDToolError(f"This version of UUID ({version}) has no timestamp, so it can't be ranged")
     
     t = get_timestamp(uuid)
     
@@ -44,9 +47,11 @@ def range(str_uuid: str, count: int, sort: str="alt"):
     
     if sort == "asc":
         it = timestamps
-    if sort == "dsc":
-        it = sorted(timestamps, reverse=True)
+    elif sort == "desc":
+        it = reversed(timestamps)
     elif sort == "alt":
         it = alt_sort(timestamps)
+    else:
+        raise UUIDToolError(f"Unknown sort mode: {sort}")
 
     return [set_time(uuid, timestamp) for timestamp in it]

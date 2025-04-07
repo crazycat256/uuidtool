@@ -1,5 +1,4 @@
-import time
-
+from uuid import UUID
 from uuidtool.utils import *
 
 OUTPUT_BASE = """UUID: {formatted_uuid}
@@ -7,30 +6,31 @@ OUTPUT_BASE = """UUID: {formatted_uuid}
 {YELLOW}Variant: {variant}{RESET}"""
 
 
-def info(str_uuid: str):
+def info(uuid: str | UUID):
     """Get information about a UUID
     
-    Args:
-        :param str_uuid: The UUID to get information about
+    :param str_uuid: The UUID to get information about
     """
-    uuid = get_uuid(str_uuid)
-        
+    
+    uuid = get_uuid(uuid)
     version = get_version(uuid)
     variant = get_variant(uuid)
-    
-    if not 7 < variant < 12:
-        print(f"{YELLOW}{BOLD}Warning: This UUID is not compliant with RFC 9562, some information may be incorrect{RESET}")
 
     match version:
-        case 1: return v1(uuid)
-        case 2: return v2(uuid)
-        case 3: return v3(uuid)
-        case 4: return v4(uuid)
-        case 5: return v5(uuid)
-        case 6: return v6(uuid)
-        case 7: return v7(uuid)
-        case 8: return v8(uuid)
-        case _: return other(uuid)
+        case 1: ret = v1(uuid)
+        case 2: ret = v2(uuid)
+        case 3: ret = v3(uuid)
+        case 4: ret = v4(uuid)
+        case 5: ret = v5(uuid)
+        case 6: ret = v6(uuid)
+        case 7: ret = v7(uuid)
+        case 8: ret = v8(uuid)
+        case _: ret = other(uuid)
+        
+    if not 7 < variant < 12:
+        ret = f"{YELLOW}{BOLD}Warning: This UUID is not compliant with RFC 9562, some information may be incorrect{RESET}\n" + ret
+        
+    return ret
 
 
 V1_V6_OUTPUT = OUTPUT_BASE + """
@@ -49,15 +49,15 @@ def v1(uuid: UUID):
         f"{BLUE}{s[24:]}{RESET}"
     )
     
-    uuid_time = get_timestamp(uuid)
-    formatted_time = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.gmtime(uuid_time // 1e9))
+    uuid_time_ns = get_timestamp(uuid)
+    formatted_time = strftime(uuid_time_ns)
 
     return V1_V6_OUTPUT.format(
         **ALL_COLORS,
         **get_common_info(uuid),
         formatted_uuid=formatted_uuid,
         time=formatted_time,
-        time_ns=uuid_time,
+        time_ns=uuid_time_ns,
         clock=uuid.clock_seq
     )
     
@@ -94,7 +94,7 @@ def v2(uuid: UUID):
         f"{YELLOW}{s[19]}{MAGENTA}{s[20]}{RESET}{CYAN}{s[21:23]}{RESET}-"
         f"{BLUE}{s[24:]}{RESET}"
     )
-    formatted_time = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.gmtime(timestamp_ns // 1e9))
+    formatted_time = strftime(timestamp_ns)
     
     return V2_OUTPUT.format(
         **ALL_COLORS,
@@ -150,11 +150,11 @@ def v4(uuid: UUID):
         f"{s[24:]}"
     )
     
-    print(V4_OUTPUT.format(
+    return V4_OUTPUT.format(
         **ALL_COLORS,
         **get_common_info(uuid),
         formatted_uuid=formatted_uuid
-    ))
+    )
 
 def v5(uuid: UUID):
     
@@ -193,7 +193,7 @@ def v6(uuid: UUID):
     # https://github.com/stevesimmons/pyuuid6/blob/main/uuid6.py
     time_val = ((uuid.int >> 80) << 12) + ((uuid.int >> 64) & 4095)
     timestamp_ns = time_val * 100 - GREGORIAN_UNIX_OFFSET
-    formatted_time = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.gmtime(timestamp_ns // 1e9))
+    formatted_time = strftime(timestamp_ns)
     
     return V1_V6_OUTPUT.format(
         **ALL_COLORS,
@@ -214,7 +214,7 @@ def v7(uuid: UUID):
     
     timestamp_ms = uuid.int >> 80
     timestamp_ns = timestamp_ms * 1_000_000
-    formatted_time = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.gmtime(timestamp_ms // 1000))
+    formatted_time = strftime(timestamp_ns)
     
     s = str(uuid)
     
@@ -260,7 +260,7 @@ def v8(uuid: UUID):
     time_mid_low_ns = ((time_mid << 8) | time_low) * 10**6 // 2**20
     possible_timestamp_ns = time_high_ns - time_mid_low_ns
     
-    formatted_possible_timestamp = time.strftime("%Y-%m-%d %H:%M:%S %Z", time.gmtime(possible_timestamp_ns // 1e9))
+    formatted_possible_timestamp = strftime(possible_timestamp_ns)
     
     s = str(uuid)
     

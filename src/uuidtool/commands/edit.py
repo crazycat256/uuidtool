@@ -3,78 +3,61 @@ from uuid import UUID
 from uuidtool.utils import *
 
 
-def edit(str_uuid: str, uuid_time: str=None, clock_sequence: str=None, node: str=None, local_id: str=None,
-         local_domain: str=None, custom_a: str=None,  custom_b: str=None,  custom_c: str=None):
+def edit_uuid(uuid: str | UUID, timestamp_ns: int=None, clock_seq: int=None, node: str=None, local_id: int=None,
+         local_domain: int=None, custom_a: str=None, custom_b: str=None, custom_c: str=None):
     """Edit a UUID
 
-    Args:
-        :param str_uuid: The UUID to edit
-        :param uuid_time: Timestamp to set
-        :param clock_sequence: The clock sequence to use
-        :param node: The node (mac address) to use
-        :param local_id: The local id to use
-        :param local_domain: The local domain to use
-        :param custom_a: A custom field
-        :param custom_b: A custom field
-        :param custom_c: A custom field
+    :param uuid: The UUID to edit
+    :param timestamp_ns: Timestamp in nanoseconds
+    :param clock_seq: The clock sequence
+    :param node: The node (mac address)
+    :param local_id: The local id
+    :param local_domain: The local domain 
+    :param custom_a: The custom field A
+    :param custom_b: The custom field B
+    :param custom_c: The custom field C
     """
     
-    uuid = get_uuid(str_uuid)
+    uuid = get_uuid(uuid)
+    if isinstance(timestamp_ns, float):
+        timestamp_ns = int(timestamp_ns)
+    if isinstance(clock_seq, float):
+        clock_seq = int(clock_seq)
+    if isinstance(local_id, float):
+        local_id = int(local_id)
+    if isinstance(local_domain, float):
+        local_domain = int(local_domain)
+    
     version = get_version(uuid)
-    check_args(version, uuid_time, clock_sequence, node, local_id, local_domain, None, None, custom_a, custom_b, custom_c)
+    check_args(version, timestamp_ns, clock_seq, node, local_id, local_domain, None, None, custom_a, custom_b, custom_c)
     
     
-    if uuid_time is not None:
-        timestamp_ns = parse_time(uuid_time)
+    if timestamp_ns is not None:
         uuid = set_time(uuid, timestamp_ns)
     
-    if clock_sequence is not None:
-        try:
-            clock_sequence = int(clock_sequence)
-        except ValueError:
-            error("Clock sequence must be an integer")
-        uuid = set_clock_sequence(uuid, clock_sequence)
+    if clock_seq is not None:
+        uuid = set_clock_sequence(uuid, clock_seq)
         
     if node is not None:
-        try:
-            node = int(node.replace(":", ""), 16)
-        except ValueError:
-            error("Node must be a 6 byte hex string or a MAC address")
+        node = get_int(node, f"Invalid node: {node}", 16)
         uuid = set_node(uuid, node)
         
     if local_id is not None:
-        try:
-            local_id = int(local_id)
-        except ValueError:
-            error("Local ID must be a 4 byte integer (0-4294967295)")
         uuid = set_local_id(uuid, local_id)
         
     if local_domain is not None:
-        try:
-            local_domain = int(local_domain)
-        except ValueError:
-            error("Local domain must be a 1 byte integer (0-255)")
         uuid = set_local_domain(uuid, local_domain)
         
     if custom_a is not None:
-        try:
-            custom_a = int(custom_a, 16)
-        except ValueError:
-            error("Custom field A must be an 8 byte hex string")
+        custom_a = get_int(custom_a, f"Invalid custom A: {custom_a}", 16)
         uuid = set_custom_a(uuid, custom_a)
         
     if custom_b is not None:
-        try:
-            custom_b = int(custom_b, 16)
-        except ValueError:
-            error("Custom field B must be a 12 bit hex string")
+        custom_b = get_int(custom_b, f"Invalid custom B: {custom_b}", 16)
         uuid = set_custom_b(uuid, custom_b)
         
     if custom_c is not None:
-        try:
-            custom_c = int(custom_c, 16)
-        except ValueError:
-            error("Custom field C must be a 16 byte hex string")
+        custom_c = get_int(custom_c, f"Invalid custom C: {custom_c}", 16)
         uuid = set_custom_c(uuid, custom_c)
             
     return uuid
@@ -83,19 +66,12 @@ def edit(str_uuid: str, uuid_time: str=None, clock_sequence: str=None, node: str
 
 def set_time(uuid: UUID, new_time_ns: int) -> UUID:
     """Set the time for a UUID
-
-    Args:
-        uuid (UUID): The UUID to set the time for
-        new_time_ns (str): The time to set in nanoseconds, seconds or iso format
-
-    Returns:
-        UUID: The UUID with the new time set
+    
+    :param uuid: The UUID to set the time for
+    :param new_time_ns: The time to set in nanoseconds, seconds or iso format
     """
-    
+
     version = get_version(uuid)
-    
-    if version not in (1, 2, 6, 7):
-        error(f"Time is not supported for UUID version {version}")
         
     uuid_int = uuid.int
         
@@ -129,44 +105,43 @@ def set_time(uuid: UUID, new_time_ns: int) -> UUID:
         
         uuid_int &= 0x00000000_000_ffff_ffff_ffffffffffff
         uuid_int |= timestamp << 80
+        
+    else:
+        raise UUIDToolError(f"Time is not supported for UUID version {version}")
                     
     return UUID(int=uuid_int)
 
 
 
-def set_clock_sequence(uuid: UUID, clock_sequence: int) -> UUID:
+def set_clock_sequence(uuid: UUID, clock_seq: int) -> UUID:
     """Set the clock sequence for a UUID
 
-    Args:
-        uuid (UUID): The UUID to set the clock sequence for
-        clock_sequence (str): The clock sequence to set, this can be an integer
-
-    Returns:
-        UUID: The UUID with the new clock sequence set
+    :param uuid: The UUID to set the clock sequence for
+    :param clock_seq: The clock sequence to set, this can be an integer
     """
     
     version = get_version(uuid)
-    
-    if version not in (1, 2, 6):
-        error(f"Clock sequence is not supported for UUID version {version}")
         
     uuid_int = uuid.int
         
     if version in (1, 6):
         
-        if clock_sequence < 0 or clock_sequence > 16383:
-            error(f"Clock sequence of UUID v{version} must be a 14 bit integer (0-16383)")
+        if clock_seq < 0 or clock_seq > 16383:
+            raise UUIDToolError(f"Clock sequence of UUID v{version} must be a 14 bit integer (0-16383), got {clock_seq}")
             
         uuid_int &= 0xffffffff_ffff_ffff_c000_ffffffffffff
-        uuid_int |= clock_sequence << 48
+        uuid_int |= clock_seq << 48
         
     elif version == 2:
             
-        if clock_sequence < 0 or clock_sequence > 63:
-            error("Clock sequence of UUID v2 must be a 6 bit integer (0-63)")
+        if clock_seq < 0 or clock_seq > 63:
+            raise UUIDToolError(f"Clock sequence of UUID v2 must be a 6 bit integer (0-63), got {clock_seq}")
             
         uuid_int &= 0xffffffff_ffff_ffff_c0ff_ffffffffffff
-        uuid_int |= clock_sequence << 56
+        uuid_int |= clock_seq << 56
+        
+    else:
+        raise UUIDToolError(f"Clock sequence is not supported for UUID version {version}")
         
         
     return UUID(int=uuid_int)
@@ -176,23 +151,19 @@ def set_clock_sequence(uuid: UUID, clock_sequence: int) -> UUID:
 def set_node(uuid: UUID, node: int) -> UUID:
     """Set the node for a UUID
 
-    Args:
-        uuid (UUID): The UUID to set the node for
-        node (str): The node to set, this must be a MAC address or a 6 byte hex string
-
-    Returns:
-        UUID: The UUID with the new node set
+    :param uuid: The UUID to set the node for
+    :param node: The node to set, this must be a MAC address or a 6 byte hex string
     """
     
     version = get_version(uuid)
     
     if version not in (1, 2, 6):
-        error(f"Node is not supported for UUID version {version}")
+        raise UUIDToolError(f"Node is not supported for UUID version {version}")
         
     uuid_int = uuid.int
         
     if node < 0 or node > 0xffffffffffff:
-        error("Node must be 48 bits (6 bytes) long")
+        raise UUIDToolError(f"Node must be 48 bits (6 bytes) long, got {node}")
             
     uuid_int &= 0xffffffff_ffff_ffff_ffff_000000000000
     uuid_int |= node
@@ -201,24 +172,20 @@ def set_node(uuid: UUID, node: int) -> UUID:
 
 def set_local_id(uuid: UUID, local_id: int) -> UUID:
     """Set the local ID for a UUID v2
-
-    Args:
-        uuid (UUID): The UUID to set the local ID for
-        local_id (int): The local ID to set
-
-    Returns:
-        UUID: The UUID with the new local ID set
+    
+    :param uuid: The UUID to set the local ID for
+    :param local_id: The local ID to set
     """
     
     version = get_version(uuid)
     
     if version != 2:
-        error(f"Local ID is not supported for UUID version {version}")
+        raise UUIDToolError(f"Local ID is not supported for UUID version {version}")
         
     uuid_int = uuid.int
         
     if local_id < 0 or local_id > 0xffffffff:
-        error("Local ID must be 32 bits (4 bytes) long")
+        raise UUIDToolError(f"Local ID must be 32 bits (4 bytes) long, got {local_id}")
             
     uuid_int &= 0x00000000_ffff_ffff_ffff_ffffffffffff
     uuid_int |= local_id << 96
@@ -227,24 +194,20 @@ def set_local_id(uuid: UUID, local_id: int) -> UUID:
 
 def set_local_domain(uuid: UUID, local_domain: int) -> UUID:
     """Set the local domain for a UUID v2
-
-    Args:
-        uuid (UUID): The UUID to set the local domain for
-        local_domain (int): The local domain to set
-
-    Returns:
-        UUID: The UUID with the new local domain set
+    
+    :param uuid: The UUID to set the local domain for
+    :param local_domain: The local domain to set
     """
     
     version = get_version(uuid)
     
     if version != 2:
-        error(f"Local domain is not supported for UUID version {version}")
+        raise UUIDToolError(f"Local domain is not supported for UUID version {version}")
         
     uuid_int = uuid.int
     
     if local_domain < 0 or local_domain > 0xff:
-        error("Local domain must be 8 bits (1 byte) long")
+        raise UUIDToolError(f"Local domain must be 8 bits (1 byte) long, got {local_domain}")
     
     uuid_int &= 0xffffffff_ffff_ffff_ff00_ffffffffffff
     uuid_int |= local_domain << 48
@@ -253,24 +216,20 @@ def set_local_domain(uuid: UUID, local_domain: int) -> UUID:
 
 def set_custom_a(uuid: UUID, custom_a: int) -> UUID:
     """Set the custom field A for a UUID v8
-
-    Args:
-        uuid (UUID): The UUID to set the custom field A for
-        custom_a (int): The custom field A to set
-
-    Returns:
-        UUID: The UUID with the new custom field A set
+    
+    :param uuid: The UUID to set the custom field A for
+    :param custom_a: The custom field A to set
     """
     
     version = get_version(uuid)
     
     if version != 8:
-        error(f"Custom field A is not supported for UUID version {version}")
+        raise UUIDToolError(f"Custom field A is not supported for UUID version {version}")
         
     uuid_int = uuid.int
     
     if custom_a < 0 or custom_a > 0xffffffffffff:
-        error("Custom field A must be 48 bits (6 bytes) long")
+        raise UUIDToolError(f"Custom field A must be 48 bits (6 bytes) long, got {custom_a}")
     
     uuid_int &= 0x00000000_0000_ffff_ffff_ffffffffffff
     uuid_int |= custom_a << 80
@@ -279,24 +238,20 @@ def set_custom_a(uuid: UUID, custom_a: int) -> UUID:
 
 def set_custom_b(uuid: UUID, custom_b: int) -> UUID:
     """Set the custom field B for a UUID v8
-
-    Args:
-        uuid (UUID): The UUID to set the custom field B for
-        custom_b (int): The custom field B to set
-
-    Returns:
-        UUID: The UUID with the new custom field B set
+    
+    :param uuid: The UUID to set the custom field B for
+    :param custom_b: The custom field B to set
     """
     
     version = get_version(uuid)
     
     if version != 8:
-        error(f"Custom field B is not supported for UUID version {version}")
+        raise UUIDToolError(f"Custom field B is not supported for UUID version {version}")
         
     uuid_int = uuid.int
     
     if custom_b < 0 or custom_b > 0xfff:
-        error("Custom field B must be 12 bits long")
+        raise UUIDToolError(f"Custom field B must be 12 bits long, got {custom_b}")
     
     uuid_int &= 0xffffffff_ffff_f000_ffff_ffffffffffff
     uuid_int |= custom_b << 64
@@ -305,24 +260,20 @@ def set_custom_b(uuid: UUID, custom_b: int) -> UUID:
 
 def set_custom_c(uuid: UUID, custom_c: int) -> UUID:
     """Set the custom field C for a UUID v8
-
-    Args:
-        uuid (UUID): The UUID to set the custom field C for
-        custom_c (int): The custom field C to set
-
-    Returns:
-        UUID: The UUID with the new custom field C set
+    
+    :param uuid: The UUID to set the custom field C for
+    :param custom_c: The custom field C to set
     """
     
     version = get_version(uuid)
     
     if version != 8:
-        error(f"Custom field C is not supported for UUID version {version}")
+        raise UUIDToolError(f"Custom field C is not supported for UUID version {version}")
         
     uuid_int = uuid.int
     
     if custom_c < 0 or custom_c > 0x3fffffffffffffff:
-        error("Custom field C must be 62 bits long")
+        raise UUIDToolError(f"Custom field C must be 62 bits long, got {custom_c}")
     
     uuid_int &= 0xffffffff_ffff_ffff_c000_000000000000
     uuid_int |= custom_c

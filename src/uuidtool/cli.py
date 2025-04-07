@@ -1,9 +1,9 @@
-import argparse
+import argparse, traceback, sys
 
-from uuidtool.commands.edit import edit
+from uuidtool.commands.edit import edit_uuid
 from uuidtool.commands.info import info
-from uuidtool.commands.new import new
-from uuidtool.commands.range import range
+from uuidtool.commands.new import new_uuid
+from uuidtool.commands.range import uuid_range
 from uuidtool.commands.sandwich import sandwich
 from uuidtool.utils import *
 
@@ -14,6 +14,12 @@ EPILOG = """some documentation about UUIDs:
 """
 
 def main():
+    
+    if sys.version_info < (3, 10):
+        print("UUIDTool requires Python 3.10 or higher", file=sys.stderr)
+        print("You are using Python", sys.version, file=sys.stderr)
+        exit(1)
+    
     parser = argparse.ArgumentParser(
         prog="uuidtool",
         description="UUIDTool - A tool to manipulate UUIDs",
@@ -29,10 +35,10 @@ def main():
     parser_edit = subparsers.add_parser("edit", help="Edit a UUID")
     parser_edit.add_argument("uuid", help="UUID to edit")
     parser_edit.add_argument("-t", "--time", help="Time to use for the UUID v1, v2, v6 or v7")
-    parser_edit.add_argument("-c", "--clock-sequence", help="Clock sequence to use for UUID v1 or v2")
+    parser_edit.add_argument("-c", "--clock-sequence", type=int, help="Clock sequence to use for UUID v1 or v2")
     parser_edit.add_argument("-n", "--node", help="Node (MAC address) to use for UUID v1, v2 or v6")
-    parser_edit.add_argument("--local-id", help="Local ID to use for UUID v2")
-    parser_edit.add_argument("--local-domain", help="Local domain to use for UUID v2")
+    parser_edit.add_argument("--local-id", type=int, help="Local ID to use for UUID v2")
+    parser_edit.add_argument("--local-domain", type=int, help="Local domain to use for UUID v2")
     parser_edit.add_argument("--custom-a", help="Custom field A to use for UUID v8")
     parser_edit.add_argument("--custom-b", help="Custom field B to use for UUID v8")
     parser_edit.add_argument("--custom-c", help="Custom field C to use for UUID v8")
@@ -50,10 +56,10 @@ def main():
     parser_new = subparsers.add_parser("new", help="Generate a new UUID")
     parser_new.add_argument("-v", "--version", default=4, type=int, help="UUID version")
     parser_new.add_argument("-t", "--time", help="Time to use for UUID v1, v2, v6 or v7")
-    parser_new.add_argument("-c", "--clock-sequence", help="Clock sequence for UUID v1 or v2")
+    parser_new.add_argument("-c", "--clock-sequence", type=int, help="Clock sequence for UUID v1 or v2")
     parser_new.add_argument("-n", "--node", help="Node (MAC address) for UUID v1, v2 or v6")
-    parser_new.add_argument("--local-id", help="Local ID for UUID v2")
-    parser_new.add_argument("--local-domain", help="Local domain for UUID v2")
+    parser_new.add_argument("--local-id", type=int, help="Local ID for UUID v2")
+    parser_new.add_argument("--local-domain", type=int, help="Local domain for UUID v2")
     parser_new.add_argument("--name", help="Name for UUID v3 or v5")
     parser_new.add_argument("--namespace", help="Namespace for UUID v3 or v5")
     
@@ -66,33 +72,45 @@ def main():
     args = parser.parse_args()
     
     command: str = args.command
-        
-    match command:
-        case "info":
-            i = info(args.uuid)
-            print(i)
-        case "edit":
-            uuid = edit(args.uuid, args.time, args.clock_sequence, args.node, args.local_id, args.local_domain,
-                        args.custom_a, args.custom_b, args.custom_c)
-            print(uuid)
-        case "sandwich":
-            uuids = sandwich(args.uuid1, args.uuid2)
-            for uuid in uuids:
-                print(uuid)
-        case "range":
-            uuids = range(args.uuid, args.count, args.sort)
-            for uuid in uuids:
-                print(uuid)
-        case "new":
-            uuid = new(args.version, args.time, args.clock_sequence, args.node, args.local_id, args.local_domain,
-                args.namespace, args.name, args.custom_a, args.custom_b, args.custom_c)
-            print(uuid)
-        case None:
-            parser.print_help()
-        case _:
-            error(f"Invalid command: {command}")
     
-
+    try:
+        
+        time_arg = parse_time(args.time) if hasattr(args, "time") else None
+        
+        match command:
+            case "info":
+                i = info(args.uuid)
+                print(i)
+            case "edit":
+                uuid = edit_uuid(args.uuid, time_arg, args.clock_sequence, args.node, args.local_id, args.local_domain,
+                            args.custom_a, args.custom_b, args.custom_c)
+                print(uuid)
+            case "sandwich":
+                uuids = sandwich(args.uuid1, args.uuid2, args.sort)
+                for uuid in uuids:
+                    print(uuid)
+            case "range":
+                uuids = uuid_range(args.uuid, args.count, args.sort)
+                for uuid in uuids:
+                    print(uuid)
+            case "new":
+                uuid = new_uuid(args.version, time_arg, args.clock_sequence, args.node, args.local_id, args.local_domain,
+                    args.namespace, args.name, args.custom_a, args.custom_b, args.custom_c)
+                print(uuid)
+            case None:
+                parser.print_help()
+            case _:
+                print(f"Unknown command: {command}", file=sys.stderr)
+                
+    except UUIDToolError as e:
+        print(*e.args, file=sys.stderr)
+        exit(1)
+        
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}", file=sys.stderr)
+        print("Please report this issue to the developer", file=sys.stderr)
+        traceback.print_exc()
+        exit(1)
 
 
 if __name__ == "__main__":

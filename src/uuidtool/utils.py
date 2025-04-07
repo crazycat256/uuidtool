@@ -1,5 +1,4 @@
-import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from uuid import UUID
 
 # https://uuid6.github.io/uuid6-ietf-draft/
@@ -7,36 +6,31 @@ GREGORIAN_UNIX_OFFSET = 12219292800000000000
 
 # https://uuid.ramsey.dev/en/stable/rfc4122/version2.html#lossy-timestamps
 V2_CLOCK_TICK = 429.4967295
-
-
-def error(*args, **kwargs):
-    """Print an error message and exit"""
-    print(*args, **kwargs, file=sys.stderr)
-    exit(1)
     
-def check_args(version: int, uuid_time: str=None, clock_sequence: str=None, node: str=None,
-               local_id: str=None,local_domain: str=None, namespace: str=None, name: str=None,
-               custom_a: str=None,  custom_b: str=None,  custom_c: str=None):
+def check_args(version: int, uuid_time=None, clock_seq=None, node=None,
+               local_id=None,local_domain=None, namespace=None, name=None,
+               custom_a=None, custom_b=None, custom_c=None):
+    
     if uuid_time is not None and version not in (1, 2, 6, 7):
-        error("Timestamp is only available for UUID versions 1, 2, 6, and 7, not ", version)
-    if clock_sequence is not None and version not in (1, 2, 6):
-        error("Clock sequence is only available for UUID versions 1, 2 and 6, not ", version)
+        raise UUIDToolError("Timestamp is only available for UUID versions 1, 2, 6, and 7, not", version)
+    if clock_seq is not None and version not in (1, 2, 6):
+        raise UUIDToolError("Clock sequence is only available for UUID versions 1, 2 and 6, not", version)
     if node is not None and version not in (1, 2, 6):
-        error("Node is only available for UUID versions 1, 2 and 6, not ", version)
+        raise UUIDToolError("Node is only available for UUID versions 1, 2 and 6, not", version)
     if local_id is not None and version != 2:
-        error("Local ID is only available for UUID version 2, not ", version)
+        raise UUIDToolError("Local ID is only available for UUID version 2, not", version)
     if local_domain is not None and version != 2:
-        error("Local domain is only available for UUID version 2, not ", version)
+        raise UUIDToolError("Local domain is only available for UUID version 2, not", version)
     if namespace is not None and version not in (3, 5):
-        error("Namespace is only available for UUID versions 3 and 5, not ", version)
+        raise UUIDToolError("Namespace is only available for UUID versions 3 and 5, not", version)
     if name is not None and version not in (3, 5):
-        error("Name is only available for UUID versions 3 and 5, not ", version)
+        raise UUIDToolError("Name is only available for UUID versions 3 and 5, not", version)
     if custom_a is not None and version != 8:
-        error("Custom field A is only available for UUID version 8, not ", version)
+        raise UUIDToolError("Custom field A is only available for UUID version 8, not", version)
     if custom_b is not None and version != 8:
-        error("Custom field B is only available for UUID version 8, not ", version)
+        raise UUIDToolError("Custom field B is only available for UUID version 8, not", version)
     if custom_c is not None and version != 8:
-        error("Custom field C is only available for UUID version 8, not ", version)
+        raise UUIDToolError("Custom field C is only available for UUID version 8, not", version)
 
 def is_uuid(uuid_str: str) -> bool:
     """Check if a string is a valid UUID
@@ -47,21 +41,29 @@ def is_uuid(uuid_str: str) -> bool:
     Returns:
         bool: True if the string is a valid UUID, False otherwise
     """
+    
+    if not isinstance(uuid_str, str):
+        return False
+    
     uuid_str = uuid_str.replace("-", "")
     return len(uuid_str) == 32 and all(c in "0123456789abcdef" for c in uuid_str.lower())
 
-def get_uuid(uuid_str: str) -> UUID:
-    """Get a UUID from a string or exit if the string is not a valid UUID
+def get_uuid(uuid: str | UUID) -> UUID:
+    """Get a UUID
 
     Args:
-        uuid_str (str): The string to convert to a UUID
+        uuid (str | UUID): The string to convert to a UUID
 
     Returns:
         UUID: The UUID
     """
-    if not is_uuid(uuid_str):
-        error(f"{uuid_str} is not a valid UUID")
-    return UUID(uuid_str)
+    
+    if isinstance(uuid, UUID):
+        return uuid
+    
+    if not is_uuid(uuid):
+        raise UUIDToolError(f"{uuid} is not a valid UUID")
+    return UUID(uuid)
 
 def get_version(uuid: UUID) -> int:
     """Get the version of a UUID
@@ -109,7 +111,8 @@ def get_timestamp(uuid: UUID) -> int:
 
     
 def alt_sort(timestamps: list[int]) -> list[int]:
-    """Sort a list of timestamps in an alternating pattern
+    """Sort a list of timestamps in an alternating pattern.
+    This function assumes that the timestamps are already sorted in ascending order.
 
     Args:
         timestamps (list[int]): The timestamps to sort
@@ -119,7 +122,7 @@ def alt_sort(timestamps: list[int]) -> list[int]:
     """
     out = []
     size = len(timestamps)
-    if len(timestamps) // 2 != 0:
+    if len(timestamps) % 2 != 0:
         idx = size // 2
         out.append(timestamps[idx])
         i1, i2 = idx - 1, idx + 1
@@ -136,11 +139,11 @@ def alt_sort(timestamps: list[int]) -> list[int]:
         
     return out
 
-def parse_time(time_str: str) -> int:
+def parse_time(time_str: str | None) -> int:
     """Parse a string representing a time into an integer
 
     Args:
-        time_str (str): The time string to parse
+        time_str (str | None): The time string to parse
 
     Returns:
         int: The time in nanoseconds
@@ -161,7 +164,7 @@ def parse_time(time_str: str) -> int:
         else:
             return int(time * 1e9)
     except ValueError:
-        error("Time must be an integer or an ISO 8601 formatted string")
+        raise UUIDToolError(f"Invalid time format: {time_str}. It must be an integer (unix timestamp in nanoseconds) or an ISO 8601 formatted string")
         
 def get_int(arg: str, error_message: str, base: int = 10) -> int:
     """Util function tu get an integer from a string
@@ -179,14 +182,32 @@ def get_int(arg: str, error_message: str, base: int = 10) -> int:
         return None
     
     if base == 16:
-        arg = arg.replace(":","")
+        arg = arg.replace(":", "")
     
     try:
         return int(arg, base)
     except ValueError:
-        error(error_message)
+        raise UUIDToolError(error_message)
 
+def strftime(timestamp_ns: int) -> str:
+    """Format a timestamp into a string
 
+    Args:
+        timestamp_ns (int): The timestamp to format
+
+    Returns:
+        str: The formatted string
+    """
+    
+    try:
+        dt = datetime(1970, 1, 1) + timedelta(seconds=timestamp_ns / 1e9)
+        return dt.strftime("%Y-%m-%d %H:%M:%S %Z UTC")
+    except (OSError, OverflowError, ValueError):
+        return "Invalid timestamp"
+
+class UUIDToolError(Exception):
+    """Exception raised for errors in UUIDTool"""
+    pass
 
 RESET = "\033[0m"
 BOLD = "\033[1m"
