@@ -23,7 +23,7 @@ def new_uuid(version: int=None, timestamp_ns: int=None, clock_seq: int=None, nod
     """
     
     check_args(version, timestamp_ns, clock_seq, node, local_id,
-               local_domain, namespace, name,custom_a, custom_b,  custom_c)
+               local_domain, namespace, name, custom_a, custom_b,  custom_c)
     
     node = get_int(node, f"Invalid node: {node}", 16)
     custom_a = get_int(custom_a, f"Invalid custom A: {custom_a}", 16)
@@ -45,7 +45,7 @@ def new_uuid(version: int=None, timestamp_ns: int=None, clock_seq: int=None, nod
         case 6:
             uuid = uuid_v6(timestamp_ns, clock_seq, node)
         case 7:
-            uuid = uuid_v7(timestamp_ns, clock_seq)
+            uuid = uuid_v7(timestamp_ns)
         case 8:
             uuid = uuid_v8(custom_a, custom_b, custom_c)
         case _:
@@ -68,6 +68,8 @@ def uuid_v1(timestamp_ns: int = None, clock_seq: int = None, node: int = None) -
         clock_seq = int(clock_seq)
     if isinstance(node, float):
         node = int(node)
+    elif isinstance(node, str):
+        node = get_int(node, f"Invalid node: {node}", 16)
     
     if timestamp_ns is None:
         timestamp_ns = time.time_ns()
@@ -123,6 +125,8 @@ def uuid_v2(timestamp_ns: int = None, local_id: int = None, local_domain: int = 
         clock_seq = int(clock_seq)
     if isinstance(node, float):
         node = int(node)
+    if isinstance(node, str):
+        node = get_int(node, f"Invalid node: {node}", 16)
     if isinstance(timestamp_ns, float):
         timestamp_ns = int(timestamp_ns)
     
@@ -165,7 +169,7 @@ def uuid_v2(timestamp_ns: int = None, local_id: int = None, local_domain: int = 
     if not isinstance(node, int) or not 0 <= node < 2**48:
         raise UUIDToolError(f"Invalid node: Expected a 48 bits integer, got {node}")
     
-    timestamp = (timestamp_ns + GREGORIAN_UNIX_OFFSET) // int(V2_CLOCK_TICK * 1e9)
+    timestamp = (timestamp_ns + GREGORIAN_UNIX_OFFSET) // V2_CLOCK_TICK
     time_low = timestamp & 0xffff
     time_hi = (timestamp >> 16) & 0xfff
     time_hi_version = time_hi | 0x2000
@@ -248,6 +252,8 @@ def uuid_v6(timestamp_ns: int = None, clock_seq: int = None, node: int = None) -
         clock_seq = int(clock_seq)
     if isinstance(node, float):
         node = int(node)
+    elif isinstance(node, str):
+        node = get_int(node, f"Invalid node: {node}", 16)
     
     if timestamp_ns is None:
         timestamp_ns = time.time_ns()
@@ -279,29 +285,20 @@ def uuid_v6(timestamp_ns: int = None, clock_seq: int = None, node: int = None) -
         node
     ))
 
-def uuid_v7(timestamp_ns: int = None, clock_seq: int = None) -> UUID:
+def uuid_v7(timestamp_ns: int = None) -> UUID:
     """Generate a version 7 UUID
     
     :param timestamp_ns: The timestamp in nanoseconds since the Unix epoch
-    :param clock_seq: The clock sequence (14 bits)
     """
     
     if isinstance(timestamp_ns, float):
         timestamp_ns = int(timestamp_ns)
-    if isinstance(clock_seq, float):
-        clock_seq = int(clock_seq)
     
     if timestamp_ns is None:
         timestamp_ns = time.time_ns()
         
-    if clock_seq is None:
-        clock_seq = random.getrandbits(14)
-        
     if not isinstance(timestamp_ns, int):
         raise UUIDToolError(f"Invalid timestamp: Expected an integer, got {timestamp_ns}")
-        
-    if not isinstance(timestamp_ns, int) or not 0 <= clock_seq < 2**14:
-        raise UUIDToolError(f"Invalid clock sequence: Expected a 14 bits integer, got {clock_seq}")
     
     timestamp = (timestamp_ns // 1_000_000) & 0xffffffffffff
     

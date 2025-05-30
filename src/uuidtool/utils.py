@@ -5,7 +5,7 @@ from uuid import UUID
 GREGORIAN_UNIX_OFFSET = 12219292800000000000
 
 # https://uuid.ramsey.dev/en/stable/rfc4122/version2.html#lossy-timestamps
-V2_CLOCK_TICK = 429.4967295
+V2_CLOCK_TICK = 429496729500
     
 def check_args(version: int, uuid_time=None, clock_seq=None, node=None,
                local_id=None,local_domain=None, namespace=None, name=None,
@@ -103,7 +103,7 @@ def get_timestamp(uuid: UUID) -> int:
     elif version == 2:
         timestamp_low = (uuid.int >> 80) & 0xffff
         timestamp_high = (uuid.int >> 64) & 0x0fff
-        return int(((timestamp_high << 16) | timestamp_low) * V2_CLOCK_TICK * 1e9) - GREGORIAN_UNIX_OFFSET
+        return ((timestamp_high << 16) | timestamp_low) * V2_CLOCK_TICK - GREGORIAN_UNIX_OFFSET
     elif version == 6:
         return ((uuid.int >> 80) << 12) + ((uuid.int >> 64) & 4095) * 100 - GREGORIAN_UNIX_OFFSET
     elif version == 7:
@@ -160,7 +160,7 @@ def parse_time(time_str: str | None) -> int:
     try:
         time = float(time_str)
         if time > 0xffffffff:
-            return int(time) 
+            return int(time_str) 
         else:
             return int(time * 1e9)
     except ValueError:

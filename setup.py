@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="uuidtool",
-    version="1.2",
+    version="1.3",
     description="CLI tool to manipulate UUIDs",
     author="crazycat256",
     url="https://github.com/crazycat256/uuidtool",

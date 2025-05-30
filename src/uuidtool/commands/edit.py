@@ -86,7 +86,7 @@ def set_time(uuid: UUID, new_time_ns: int) -> UUID:
                 
     elif version == 2:
         timestamp = new_time_ns + GREGORIAN_UNIX_OFFSET
-        timestamp = timestamp // int(V2_CLOCK_TICK * 1e9)
+        timestamp = timestamp // V2_CLOCK_TICK
         time_low = timestamp & 0xffff
         time_high = (timestamp >> 16) & 0x0fff
                     
