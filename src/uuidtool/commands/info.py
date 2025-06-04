@@ -6,7 +6,7 @@ OUTPUT_BASE = """UUID: {formatted_uuid}
 {YELLOW}Variant: {variant}{RESET}"""
 
 
-def info(uuid: str | UUID):
+def info(uuid: "str | UUID"):
     """Get information about a UUID
     
     :param str_uuid: The UUID to get information about
@@ -16,16 +16,24 @@ def info(uuid: str | UUID):
     version = get_version(uuid)
     variant = get_variant(uuid)
 
-    match version:
-        case 1: ret = v1(uuid)
-        case 2: ret = v2(uuid)
-        case 3: ret = v3(uuid)
-        case 4: ret = v4(uuid)
-        case 5: ret = v5(uuid)
-        case 6: ret = v6(uuid)
-        case 7: ret = v7(uuid)
-        case 8: ret = v8(uuid)
-        case _: ret = other(uuid)
+    if version == 1:
+        ret = v1(uuid)
+    elif version == 2:
+        ret = v2(uuid)
+    elif version == 3:
+        ret = v3(uuid)
+    elif version == 4:
+        ret = v4(uuid)
+    elif version == 5:
+        ret = v5(uuid)
+    elif version == 6:
+        ret = v6(uuid)
+    elif version == 7:
+        ret = v7(uuid)
+    elif version == 8:
+        ret = v8(uuid)
+    else:
+        ret = other(uuid)
         
     if not 7 < variant < 12:
         ret = f"{YELLOW}{BOLD}Warning: This UUID is not compliant with RFC 9562, some information may be incorrect{RESET}\n" + ret
@@ -80,11 +88,14 @@ def v2(uuid: UUID):
     clock_sequence = (uuid.int >> 56) & 0x3f
     
     local_domain = (uuid.int >> 48) & 0xff
-    match local_domain:
-        case 0: local_domain = f"{local_domain} (POSIX UID)"
-        case 1: local_domain = f"{local_domain} (POSIX GID)"
-        case 2: local_domain = f"{local_domain} (Organization)"
-        case _: local_domain = f"{local_domain} (Unknown)"
+    if local_domain == 0:
+        local_domain = f"{local_domain} (POSIX UID)"
+    elif local_domain == 1:
+        local_domain = f"{local_domain} (POSIX GID)"
+    elif local_domain == 2:
+        local_domain = f"{local_domain} (Organization)"
+    else:
+        local_domain = f"{local_domain} (Unknown)"
     
     s = str(uuid)
     formatted_uuid = (
@@ -336,7 +347,7 @@ def get_common_info(uuid: UUID) -> dict:
     return {
         "version": version,
         "variant": variant,
-        "node": ":".join(f"{b:02x}" for b in uuid.node.to_bytes(6))
+        "node": ":".join(f"{b:02x}" for b in uuid.node.to_bytes(6, "big")),
     }
     
 

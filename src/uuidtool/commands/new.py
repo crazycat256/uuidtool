@@ -31,25 +31,24 @@ def new_uuid(version: int=None, timestamp_ns: int=None, clock_seq: int=None, nod
     custom_c = get_int(custom_c, f"Invalid custom C: {custom_c}", 16)
 
     uuid = None
-    match version:
-        case 1:
-            uuid = uuid_v1(timestamp_ns, clock_seq, node)
-        case 2:
-            uuid = uuid_v2(timestamp_ns, local_id, local_domain, clock_seq, node)
-        case 3:
-            uuid = uuid_v3(namespace, name)
-        case 4:
-            uuid = uuid_v4()
-        case 5:
-            uuid = uuid_v5(namespace, name)
-        case 6:
-            uuid = uuid_v6(timestamp_ns, clock_seq, node)
-        case 7:
-            uuid = uuid_v7(timestamp_ns)
-        case 8:
-            uuid = uuid_v8(custom_a, custom_b, custom_c)
-        case _:
-            raise UUIDToolError("UUID version must be between 1 and 8")
+    if version == 1:
+        uuid = uuid_v1(timestamp_ns, clock_seq, node)
+    elif version == 2:
+        uuid = uuid_v2(timestamp_ns, local_id, local_domain, clock_seq, node)
+    elif version == 3:
+        uuid = uuid_v3(namespace, name)
+    elif version == 4:
+        uuid = uuid_v4()
+    elif version == 5:
+        uuid = uuid_v5(namespace, name)
+    elif version == 6:
+        uuid = uuid_v6(timestamp_ns, clock_seq, node)
+    elif version == 7:
+        uuid = uuid_v7(timestamp_ns)
+    elif version == 8:
+        uuid = uuid_v8(custom_a, custom_b, custom_c)
+    else:
+        raise UUIDToolError("UUID version must be between 1 and 8")
 
     return uuid
     
@@ -135,13 +134,12 @@ def uuid_v2(timestamp_ns: int = None, local_id: int = None, local_domain: int = 
     
     if local_id is None:
         try:
-            match local_domain:
-                case 0:
-                    local_id = os.getuid()
-                case 1:
-                    local_id = os.getgid()
-                case _:
-                    local_id = 1000
+            if local_domain == 0:
+                local_id = os.getuid()
+            elif local_domain == 1:
+                local_id = os.getgid()
+            else:
+                local_id = 1000
         except AttributeError:
             local_id = 1000
         
@@ -193,7 +191,7 @@ namespaces = {
     "@x500": NAMESPACE_X500
 }
 
-def uuid_v3(namespace: str | Literal["@dns", "@url", "@oid", "@x500"], name: str) -> UUID:
+def uuid_v3(namespace: "str | Literal['@dns', '@url', '@oid', '@x500']", name: str) -> UUID:
     """Generate a version 3 UUID
     
     :param namespace: The namespace, this can be a UUID or one of the following: @dns, @url, @oid, @x500
@@ -218,7 +216,7 @@ def uuid_v4() -> UUID:
     return uuid4()
 
 
-def uuid_v5(namespace: str | Literal["@dns", "@url", "@oid", "@x500"], name: str) -> UUID:
+def uuid_v5(namespace: "str | Literal['@dns', '@url', '@oid', '@x500']", name: str) -> UUID:
     """Generate a version 5 UUID
     
     :param namespace: The namespace, this can be a UUID or one of the following: @dns, @url, @oid, @x500

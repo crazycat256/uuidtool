@@ -48,7 +48,7 @@ def is_uuid(uuid_str: str) -> bool:
     uuid_str = uuid_str.replace("-", "")
     return len(uuid_str) == 32 and all(c in "0123456789abcdef" for c in uuid_str.lower())
 
-def get_uuid(uuid: str | UUID) -> UUID:
+def get_uuid(uuid: "str | UUID") -> UUID:
     """Get a UUID
 
     Args:
@@ -139,7 +139,7 @@ def alt_sort(timestamps: list[int]) -> list[int]:
         
     return out
 
-def parse_time(time_str: str | None) -> int:
+def parse_time(time_str: "str | None") -> int:
     """Parse a string representing a time into an integer
 
     Args:
@@ -201,7 +201,7 @@ def strftime(timestamp_ns: int) -> str:
     
     try:
         dt = datetime(1970, 1, 1) + timedelta(seconds=timestamp_ns / 1e9)
-        return dt.strftime("%Y-%m-%d %H:%M:%S %Z UTC")
+        return dt.strftime("%Y-%m-%d %H:%M:%S UTC")
     except (OSError, OverflowError, ValueError):
         return "Invalid timestamp"
 

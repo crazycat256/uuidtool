@@ -15,11 +15,6 @@ EPILOG = """some documentation about UUIDs:
 
 def main():
     
-    if sys.version_info < (3, 10):
-        print("UUIDTool requires Python 3.10 or higher", file=sys.stderr)
-        print("You are using Python", sys.version, file=sys.stderr)
-        exit(1)
-    
     parser = argparse.ArgumentParser(
         prog="uuidtool",
         description="UUIDTool - A tool to manipulate UUIDs",
@@ -77,30 +72,29 @@ def main():
         
         time_arg = parse_time(args.time) if hasattr(args, "time") else None
         
-        match command:
-            case "info":
-                i = info(args.uuid)
-                print(i)
-            case "edit":
-                uuid = edit_uuid(args.uuid, time_arg, args.clock_sequence, args.node, args.local_id, args.local_domain,
-                            args.custom_a, args.custom_b, args.custom_c)
+        if command == "info":
+            i = info(args.uuid)
+            print(i)
+        elif command == "edit":
+            uuid = edit_uuid(args.uuid, time_arg, args.clock_sequence, args.node, args.local_id, args.local_domain,
+                             args.custom_a, args.custom_b, args.custom_c)
+            print(uuid)
+        elif command == "sandwich":
+            uuids = sandwich(args.uuid1, args.uuid2, args.sort)
+            for uuid in uuids:
                 print(uuid)
-            case "sandwich":
-                uuids = sandwich(args.uuid1, args.uuid2, args.sort)
-                for uuid in uuids:
-                    print(uuid)
-            case "range":
-                uuids = uuid_range(args.uuid, args.count, args.sort)
-                for uuid in uuids:
-                    print(uuid)
-            case "new":
-                uuid = new_uuid(args.version, time_arg, args.clock_sequence, args.node, args.local_id, args.local_domain,
-                    args.namespace, args.name, args.custom_a, args.custom_b, args.custom_c)
+        elif command == "range":
+            uuids = uuid_range(args.uuid, args.count, args.sort)
+            for uuid in uuids:
                 print(uuid)
-            case None:
-                parser.print_help()
-            case _:
-                print(f"Unknown command: {command}", file=sys.stderr)
+        elif command == "new":
+            uuid = new_uuid(args.version, time_arg, args.clock_sequence, args.node, args.local_id, args.local_domain,
+                            args.namespace, args.name, args.custom_a, args.custom_b, args.custom_c)
+            print(uuid)
+        elif command is None:
+            parser.print_help()
+        else:
+            print(f"Unknown command: {command}", file=sys.stderr)
                 
     except UUIDToolError as e:
         print(*e.args, file=sys.stderr)

@@ -3,7 +3,7 @@ from uuid import UUID
 from uuidtool.utils import *
 
 
-def edit_uuid(uuid: str | UUID, timestamp_ns: int=None, clock_seq: int=None, node: str=None, local_id: int=None,
+def edit_uuid(uuid: "str | UUID", timestamp_ns: int=None, clock_seq: int=None, node: str=None, local_id: int=None,
          local_domain: int=None, custom_a: str=None, custom_b: str=None, custom_c: str=None):
     """Edit a UUID
 

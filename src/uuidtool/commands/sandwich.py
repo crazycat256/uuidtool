@@ -3,7 +3,7 @@ from uuidtool.commands.edit import set_time
 from uuidtool.utils import *
 
 
-def sandwich(uuid1: str | UUID, uuid2: str | UUID, sort: Literal["asc", "desc", "alt"] = "alt"):
+def sandwich(uuid1: "str | UUID", uuid2: "str | UUID", sort: Literal["asc", "desc", "alt"] = "alt"):
     """Perform a sandwich attack
 
         :param uuid1: The first UUID
@@ -28,21 +28,20 @@ def sandwich(uuid1: str | UUID, uuid2: str | UUID, sort: Literal["asc", "desc", 
     if t1 > t2:
         t1, t2 = t2, t1
     
-    match version:
-        case 1 | 6:
-            clock_tick = 100
-            highest = 0x5966c59f06182ff9c
-            lowest = -GREGORIAN_UNIX_OFFSET
-        case 2:
-            clock_tick = V2_CLOCK_TICK
-            highest = 0x5966c598621830000
-            lowest = -GREGORIAN_UNIX_OFFSET
-        case 7:
-            clock_tick = 1_000_000
-            highest = (2**48 - 1) * 1_000_000
-            lowest = 0
-        case _:
-            raise UUIDToolError(f"UUID version {version} has no timestamp, so it can't be sandwiched")
+    if version in (1, 6):
+        clock_tick = 100
+        highest = 0x5966c59f06182ff9c
+        lowest = -GREGORIAN_UNIX_OFFSET
+    elif version == 2:
+        clock_tick = V2_CLOCK_TICK
+        highest = 0x5966c598621830000
+        lowest = -GREGORIAN_UNIX_OFFSET
+    elif version == 7:
+        clock_tick = 1_000_000
+        highest = (2**48 - 1) * 1_000_000
+        lowest = 0
+    else:
+        raise UUIDToolError(f"UUID version {version} has no timestamp, so it can't be sandwiched")
     
     low = max(lowest, t1 + clock_tick)
     high = min(highest, t2)
@@ -51,7 +50,7 @@ def sandwich(uuid1: str | UUID, uuid2: str | UUID, sort: Literal["asc", "desc", 
     if sort == "asc":
         it = timestamps
     elif sort == "desc":
-        it = sorted(timestamps, reverse=True)
+        it = reversed(timestamps)
     elif sort == "alt":
         it = alt_sort(timestamps)
     else:

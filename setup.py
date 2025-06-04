@@ -5,7 +5,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="uuidtool",
-    version="1.3",
+    version="1.4",
     description="CLI tool to manipulate UUIDs",
     author="crazycat256",
     url="https://github.com/crazycat256/uuidtool",
@@ -16,7 +16,7 @@ setup(
             "uuidtool=uuidtool.cli:main",
         ],
     },
-    python_requires=">=3.10",
+    python_requires=">=3.9",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
